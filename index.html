@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -82,7 +82,7 @@ let isTouch = false;
 
 // Get audio element
 const backgroundMusic = document.getElementById('backgroundMusic');
-backgroundMusic.volume = 0.5; // 50% volume
+backgroundMusic.volume = 0.5;
 
 // --- SCENE SETUP ---
 const scene = new THREE.Scene();
@@ -94,11 +94,11 @@ const bgCtx = bgCanvas.getContext('2d');
 
 // Create beautiful gradient background
 const gradient = bgCtx.createRadialGradient(256, 256, 0, 256, 256, 256);
-gradient.addColorStop(0, '#2d1b4e');     // Deep purple center
-gradient.addColorStop(0.3, '#4a1a4a');   // Purple-magenta
-gradient.addColorStop(0.6, '#1a0a2e');   // Dark purple
-gradient.addColorStop(0.8, '#0a0515');   // Very dark
-gradient.addColorStop(1, '#000000');      // Black edges
+gradient.addColorStop(0, '#2d1b4e');
+gradient.addColorStop(0.3, '#4a1a4a');
+gradient.addColorStop(0.6, '#1a0a2e');
+gradient.addColorStop(0.8, '#0a0515');
+gradient.addColorStop(1, '#000000');
 
 bgCtx.fillStyle = gradient;
 bgCtx.fillRect(0, 0, 512, 512);
@@ -119,9 +119,9 @@ for (let i = 0; i < 20; i++) {
 scene.background = new THREE.CanvasTexture(bgCanvas);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 40;
+camera.position.set(0, 0, 35);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.getElementById('canvas-container').appendChild(renderer.domElement);
@@ -130,8 +130,8 @@ document.getElementById('canvas-container').appendChild(renderer.domElement);
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight), 
-    1.3, 0.5, 0.2
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    1.2, 0.45, 0.2
 );
 composer.addPass(bloomPass);
 
@@ -145,28 +145,37 @@ spaceGroup.add(heartRingGroup);
 spaceGroup.add(sakuraGroup);
 scene.add(spaceGroup, heavenGroup);
 
-// --- PRECIOUS PLANET ---
-const planetGeo = new THREE.SphereGeometry(6, 128, 128);
-const planetMat = new THREE.MeshPhysicalMaterial({
+// --- PRECIOUS PLANET - FIXED TO BE VISIBLE ---
+const planetGeo = new THREE.SphereGeometry(5, 128, 128);
+const planetMat = new THREE.MeshStandardMaterial({
     color: 0xff69b4,
-    emissive: 0x9b59b6,
-    emissiveIntensity: 0.4,
-    roughness: 0.3,
-    metalness: 0.4,
-    clearcoat: 0.8,
-    clearcoatRoughness: 0.2
+    emissive: 0xFF69B4,
+    emissiveIntensity: 0.3,
+    roughness: 0.4,
+    metalness: 0.3
 });
 const planet = new THREE.Mesh(planetGeo, planetMat);
 planet.name = 'preciousPlanet';
 planet.userData.isPlanet = true;
 spaceGroup.add(planet);
 
+// Glow sphere (helps visibility)
+const glowGeo = new THREE.SphereGeometry(5.3, 64, 64);
+const glowMat = new THREE.MeshBasicMaterial({ 
+    color: 0xffb6c1, 
+    transparent: true, 
+    opacity: 0.25, 
+    side: THREE.BackSide 
+});
+const glow = new THREE.Mesh(glowGeo, glowMat);
+spaceGroup.add(glow);
+
 // PINK SATURN RING (Exact Pink Like Hearts)
-const ringGeo = new THREE.RingGeometry(7.5, 10, 128);
+const ringGeo = new THREE.RingGeometry(6.5, 9, 128);
 const ringMat = new THREE.MeshBasicMaterial({ 
     color: 0xFFB6C1, 
     transparent: true, 
-    opacity: 0.6, 
+    opacity: 0.55, 
     side: THREE.DoubleSide 
 });
 const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -175,25 +184,14 @@ ring.name = 'planetRing';
 ring.userData.isRing = true;
 spaceGroup.add(ring);
 
-// Glow sphere
-const glowGeo = new THREE.SphereGeometry(6.5, 64, 64);
-const glowMat = new THREE.MeshBasicMaterial({ 
-    color: 0xffb6c1, 
-    transparent: true, 
-    opacity: 0.15, 
-    side: THREE.BackSide 
-});
-const glow = new THREE.Mesh(glowGeo, glowMat);
-spaceGroup.add(glow);
-
 // --- STARS ---
 const starGeo = new THREE.BufferGeometry();
-const starPositions = new Float32Array(800 * 3);
-for(let i = 0; i < 2400; i++) starPositions[i] = (Math.random() - 0.5) * 200;
+const starPositions = new Float32Array(600 * 3);
+for(let i = 0; i < 1800; i++) starPositions[i] = (Math.random() - 0.5) * 150;
 starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
 const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ 
     color: 0xffffff, 
-    size: 0.3, 
+    size: 0.35, 
     transparent: true, 
     opacity: 0.8 
 }));
@@ -226,7 +224,7 @@ const heartTex = createHeartTexture();
 
 for (let i = 0; i < 200; i++) {
     const angle = (i / 200) * Math.PI * 2;
-    const radius = 11 + Math.random() * 1.5;
+    const radius = 10.5 + Math.random() * 1.5;
     
     const heart = new THREE.Sprite(new THREE.SpriteMaterial({ 
         map: heartTex, 
@@ -252,7 +250,7 @@ for (let i = 0; i < 200; i++) {
     heartParticles.push(heart);
 }
 
-// --- 300 SAKURA PETALS (Infinity Falling) ---
+// --- 300 SAKURA PETALS ---
 function createSakuraTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
@@ -308,32 +306,37 @@ for (let i = 0; i < 300; i++) {
     sakuraPetals.push(petal);
 }
 
+// --- LIGHTING (FIXED - BETTER VISIBILITY) ---
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+scene.add(new THREE.PointLight(0xFF69B4, 1.5, 100));
+scene.add(new THREE.DirectionalLight(0xffffff, 0.6, new THREE.Vector3(10, 10, 10)));
+
 // --- FLOATING HOUSE ---
 const house = new THREE.Group();
-house.position.set(-25, 12, -15);
+house.position.set(-25, 10, -10);
 const houseBody = new THREE.Mesh(
-    new THREE.BoxGeometry(3, 2.5, 2.5),
+    new THREE.BoxGeometry(2.5, 2, 2),
     new THREE.MeshStandardMaterial({ color: 0xF5DEB3 })
 );
 const houseRoof = new THREE.Mesh(
-    new THREE.ConeGeometry(2.3, 1.5, 4),
+    new THREE.ConeGeometry(2, 1.2, 4),
     new THREE.MeshStandardMaterial({ color: 0x8B4513 })
 );
-houseRoof.position.y = 2;
+houseRoof.position.y = 1.6;
 houseRoof.rotation.y = Math.PI / 4;
 house.add(houseBody, houseRoof);
 
 const balloonColors = [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF69B4];
 for (let i = 0; i < 5; i++) {
     const balloon = new THREE.Mesh(
-        new THREE.SphereGeometry(0.4, 16, 16),
+        new THREE.SphereGeometry(0.35, 16, 16),
         new THREE.MeshStandardMaterial({ color: balloonColors[i] })
     );
     const angle = (i / 5) * Math.PI * 2;
     balloon.position.set(
-        Math.cos(angle) * 1.5,
-        3 + Math.sin(angle * 2),
-        Math.sin(angle) * 0.6
+        Math.cos(angle) * 1.2,
+        2.5 + Math.sin(angle),
+        Math.sin(angle) * 0.5
     );
     house.add(balloon);
 }
@@ -341,61 +344,31 @@ spaceGroup.add(house);
 
 // --- CLOUD CASTLE ---
 const castle = new THREE.Group();
-castle.position.set(25, 10, -15);
+castle.position.set(25, 8, -12);
 
 const cloudBase = new THREE.Mesh(
-    new THREE.SphereGeometry(5, 32, 32),
+    new THREE.SphereGeometry(4, 32, 32),
     new THREE.MeshStandardMaterial({ 
         color: 0xFFF0F5, 
         transparent: true, 
         opacity: 0.7 
     })
 );
-cloudBase.scale.y = 0.4;
+cloudBase.scale.y = 0.35;
 castle.add(cloudBase);
 
-const towerPositions = [
-    [0, 2, 0, 4, 1.2],
-    [-2, 1.8, 0, 3.2, 1],
-    [2, 1.8, 0, 3.2, 1],
-    [0, 2.5, -2, 2.5, 0.8]
-];
-
-towerPositions.forEach(([x, y, z, h, r]) => {
-    const tower = new THREE.Mesh(
-        new THREE.CylinderGeometry(r, r, h, 16),
-        new THREE.MeshStandardMaterial({ color: 0xDDA0DD })
-    );
-    tower.position.set(x, y + h / 2, z);
-    castle.add(tower);
-    
-    const roof = new THREE.Mesh(
-        new THREE.ConeGeometry(r * 1.3, 1.8, 16),
-        new THREE.MeshStandardMaterial({ color: 0x9370DB })
-    );
-    roof.position.set(x, y + h + 0.9, z);
-    castle.add(roof);
+[[0, 1.5, 0, 3.5, 1], [-1.5, 1.2, 0, 2.8, 0.75], [1.5, 1.2, 0, 2.8, 0.75]].forEach(([x, y, z, h, r]) => {
+    castle.add(new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 16), new THREE.MeshStandardMaterial({ color: 0xDDA0DD }))).position.set(x, y + h / 2, z);
+    castle.add(new THREE.Mesh(new THREE.ConeGeometry(r * 1.2, 1.5, 16), new THREE.MeshStandardMaterial({ color: 0x9370DB }))).position.set(x, y + h + 0.75, z);
 });
 
 spaceGroup.add(castle);
-
-// --- LIGHTING ---
-const ambientLight = new THREE.AmbientLight(0x404040, 1);
-spaceGroup.add(ambientLight);
-
-const pointLight = new THREE.PointLight(0xFF69B4, 2, 60);
-pointLight.position.set(0, 0, 20);
-spaceGroup.add(pointLight);
-
-const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
-directionalLight.position.set(10, 10, 10);
-spaceGroup.add(directionalLight);
 
 // --- HEAVENLY INSIDE ---
 for (let i = 0; i < 12; i++) {
     const frame = new THREE.Group();
     const angle = (i / 12) * Math.PI * 2;
-    const radius = 15 + Math.random() * 5;
+    const radius = 18 + Math.random() * 4;
     frame.position.set(
         Math.cos(angle) * radius,
         (Math.random() - 0.5) * 10,
@@ -403,26 +376,26 @@ for (let i = 0; i < 12; i++) {
     );
     
     const border = new THREE.Mesh(
-        new THREE.BoxGeometry(3.5, 4, 0.25),
+        new THREE.BoxGeometry(3.2, 3.7, 0.2),
         new THREE.MeshStandardMaterial({ 
             color: 0xFFD700, 
             metalness: 0.9, 
-            roughness: 0.1 
+            roughness: 0.15 
         })
     );
     
     const photo = new THREE.Mesh(
-        new THREE.PlaneGeometry(3, 3.5),
+        new THREE.PlaneGeometry(2.8, 3.3),
         new THREE.MeshBasicMaterial({ color: 0xFFB6C1 })
     );
-    photo.position.z = 0.13;
+    photo.position.z = 0.11;
     photo.userData = { isPhoto: true, index: i };
     
     frame.add(border, photo);
     frame.lookAt(0, 0, 0);
     frame.userData = {
         y: frame.position.y,
-        speed: 0.3 + Math.random() * 0.5,
+        speed: 0.35 + Math.random() * 0.55,
         radius: radius,
         angle: angle
     };
@@ -431,19 +404,19 @@ for (let i = 0; i < 12; i++) {
     photoFrames.push(photo);
 }
 
-heavenGroup.add(new THREE.AmbientLight(0xffffff, 1));
-const heavenLight = new THREE.PointLight(0xff69b4, 3, 60);
-heavenLight.position.set(0, 0, 20);
+heavenGroup.add(new THREE.AmbientLight(0xffffff, 1.0));
+const heavenLight = new THREE.PointLight(0xff69b4, 3.0, 200);
+heavenLight.position.set(0, 0, 40);
 heavenGroup.add(heavenLight);
 
 const centralHeart = new THREE.Sprite(
     new THREE.SpriteMaterial({ 
         map: heartTex, 
         transparent: true, 
-        opacity: 0.8 
+        opacity: 0.85 
     })
 );
-centralHeart.scale.set(4, 4, 1);
+centralHeart.scale.set(4.2, 4.2, 1);
 heavenGroup.add(centralHeart);
 
 // --- LOAD PHOTOS FROM 1.jpg to 12.jpg ---
@@ -456,6 +429,7 @@ for (let i = 1; i <= 12; i++) {
         (texture) => {
             console.log(`Loaded: ${filename}`);
             if (photoFrames[i - 1]) {
+                texture.colorSpace = THREE.SRGBColorSpace;
                 photoFrames[i - 1].material = new THREE.MeshBasicMaterial({ map: texture });
                 photoFrames[i - 1].material.needsUpdate = true;
             }
@@ -508,83 +482,75 @@ renderer.domElement.addEventListener('touchmove', (e) => {
 }, { passive: false });
 
 // --- CLICK TO ENTER ---
-function handleInteraction(event) {
-    if (isInsidePlanet) return;
-    
-    let clientX, clientY;
-    
-    if (event.changedTouches && event.changedTouches.length > 0) {
-        clientX = event.changedTouches[0].clientX;
-        clientY = event.changedTouches[0].clientY;
-    } else {
-        clientX = event.clientX;
-        clientY = event.clientY;
-    }
-    
-    mouse.x = (clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-    
-    raycaster.setFromCamera(mouse, camera);
-    
-    const intersects = raycaster.intersectObjects([planet, ring], true);
-    
-    if (intersects.length > 0) {
-        enterPlanet();
-    }
+const raycasterEnter = new THREE.Raycaster();
+const mouseEnter = new THREE.Vector2();
+
+function pointerToNDC(clientX, clientY){
+    mouseEnter.x = (clientX / window.innerWidth) * 2 - 1;
+    mouseEnter.y = -(clientY / window.innerHeight) * 2 + 1;
 }
 
-renderer.domElement.addEventListener('click', handleInteraction);
+function tryEnter(clientX, clientY){
+    if (isInsidePlanet) return;
+    pointerToNDC(clientX, clientY);
+    raycasterEnter.setFromCamera(mouseEnter, camera);
+    const hits = raycasterEnter.intersectObjects([planet, ring], true);
+    if (hits.length) enterPlanet();
+}
+
+renderer.domElement.addEventListener('click', (e) => tryEnter(e.clientX, e.clientY));
 renderer.domElement.addEventListener('touchend', (e) => {
-    if (!isTouch || Math.abs(e.changedTouches[0].clientX - touchStartX) < 10) {
-        handleInteraction(e);
-    }
-});
+    const t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    if (Math.abs(t.clientX - touchStartX) < 12) tryEnter(t.clientX, t.clientY);
+}, { passive: true });
 
 // --- TRANSITION LOGIC ---
-function enterPlanet() {
+function enterPlanet(){
     isInsidePlanet = true;
     autoRotate = false;
-    let progress = 0;
-    const startZ = camera.position.z;
 
     // PLAY MUSIC WHEN ENTERING!
-    backgroundMusic.play().catch(error => {
-        console.log('Audio play failed (user may need to interact first):', error);
+    backgroundMusic.play().catch(() => {
+        console.log('Audio needs user interaction first');
     });
 
-    function transition() {
-        progress += 0.02;
-        bloomPass.strength = 1.3 + (progress * 5);
-        camera.position.z = startZ * (1 - progress);
+    let p = 0;
+    const startZ = camera.position.z;
 
-        if (progress >= 0.95) {
+    function step(){
+        p += 0.02;
+        bloomPass.strength = 1.2 + p * 4.5;
+        camera.position.z = startZ * (1 - p);
+
+        if (p >= 0.95){
             spaceGroup.visible = false;
             heavenGroup.visible = true;
             camera.position.set(0, 0, 30);
-            camera.lookAt(0, 0, 0);
+            camera.lookAt(0,0,0);
             bloomPass.strength = 1.8;
-            
+
             document.getElementById('back-btn').style.display = 'block';
             document.getElementById('hint').style.opacity = 0;
             return;
         }
-        requestAnimationFrame(transition);
+        requestAnimationFrame(step);
     }
-    transition();
+    step();
 }
 
 document.getElementById('back-btn').addEventListener('click', () => {
     isInsidePlanet = false;
     heavenGroup.visible = false;
     spaceGroup.visible = true;
-    camera.position.z = 40;
-    camera.lookAt(0, 0, 0);
-    bloomPass.strength = 1.3;
+    camera.position.set(0,0,35);
+    camera.lookAt(0,0,0);
+    bloomPass.strength = 1.2;
     autoRotate = true;
-    
+
     // PAUSE MUSIC WHEN RETURNING TO SPACE
     backgroundMusic.pause();
-    
+
     document.getElementById('back-btn').style.display = 'none';
     document.getElementById('hint').style.opacity = 0.95;
 });
@@ -594,45 +560,65 @@ function animate(time) {
     requestAnimationFrame(animate);
     const t = time * 0.001;
 
-    if (!isInsidePlanet) {
-        spaceGroup.rotation.y += (targetRotationY - spaceGroup.rotation.y) * 0.08;
-        
-        if (autoRotate) {
-            targetRotationY += 0.003;
-        }
-        
-        planet.material.emissiveIntensity = 0.4 + Math.sin(t * 2) * 0.15;
+    if (!isInsidePlanet){
+        // smooth rotate
+        spaceGroup.rotation.y += (targetY - spaceGroup.rotation.y) * 0.08;
+        if (autoRotate) targetRotationY += 0.003;
+
         ring.rotation.z += 0.003;
-        
-        heartParticles.forEach(heart => {
-            heart.userData.angle += heart.userData.speed;
-            heart.position.x = Math.cos(heart.userData.angle) * heart.userData.radius;
-            heart.position.z = Math.sin(heart.userData.angle) * heart.userData.radius;
-            heart.material.opacity = heart.userData.baseOpacity + Math.sin(t * 3 + heart.userData.angle) * 0.2;
-        });
-        
-        sakuraPetals.forEach(petal => {
-            petal.position.y -= petal.userData.speedY;
-            petal.position.x += petal.userData.speedX + Math.sin(t + petal.position.y) * 0.01;
-            petal.rotation.z += petal.userData.rotationSpeed;
-            petal.material.opacity = petal.userData.baseOpacity + Math.sin(t * 2 + petal.position.y) * 0.15;
-            
-            if (petal.position.y < -40) {
-                petal.position.y = 40;
-                petal.position.x = (Math.random() - 0.5) * 100;
-                petal.position.z = (Math.random() - 0.5) * 60;
+
+        // hearts orbit
+        for (const h of hearts){
+            h.userData.a += h.userData.sp;
+            h.position.x = Math.cos(h.userData.a) * h.userData.r;
+            h.position.z = Math.sin(h.userData.a) * h.userData.r;
+            h.material.opacity = h.userData.base + Math.sin(t*3 + h.userData.a) * 0.18;
+        }
+
+        // petals fall
+        for (const p of sakuraPetals){
+            p.position.y -= p.userData.vy;
+            p.position.x += p.userData.vx + Math.sin(t + p.position.y) * 0.01;
+            p.rotation.z += p.userData.rz;
+            if (p.position.y < -45){
+                p.position.y = 45;
+                p.position.x = (Math.random()-0.5)*110;
+                p.position.z = (Math.random()-0.5)*70;
             }
-        });
-        
-        house.position.y = 12 + Math.sin(t * 0.5) * 1;
-        house.rotation.z = Math.sin(t * 0.3) * 0.04;
-        
-        castle.position.y = 10 + Math.sin(t * 0.4 + 1) * 0.8;
-        
-        stars.rotation.y += 0.0002;
+        }
+
+        house.position.y = 10 + Math.sin(t * 0.5) * 0.8;
+        house.rotation.z = Math.sin(t * 0.3) * 0.03;
+        castle.position.y = 8 + Math.sin(t * 0.4 + 1) * 0.6;
+
+        stars.rotation.y += 0.00025;
     } else {
-        heavenGroup.children.forEach(child => {
-            if (child.userData.y) {
-                child.position.y = child.userData.y + Math.sin(t * child.userData.speed) * 0.6;
-                child.userData.angle += 0.002;
-                child.position.x = Math.cos(child.userData.angle) * 
+        // inside: float frames + pulse heart
+        centralHeart.scale.setScalar(4.2 + Math.sin(t*2) * 0.45);
+
+        for (const child of heavenGroup.children){
+            if (!child.userData || child.userData.baseY === undefined) continue;
+            child.position.y = child.userData.baseY + Math.sin(t * child.userData.sp) * 0.6;
+            child.userData.a += 0.0018;
+            child.position.x = Math.cos(child.userData.a) * child.userData.rr;
+            child.position.z = Math.sin(child.userData.a) * child.userData.rr;
+            child.lookAt(0,0,0);
+        }
+    }
+
+    composer.render();
+}
+
+// Start
+document.getElementById('loading').style.display = 'none';
+animate(0);
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
