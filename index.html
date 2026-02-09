@@ -8,10 +8,10 @@
         body { margin: 0; overflow: hidden; background: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 
         #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; inset: 0;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             background: radial-gradient(circle at center, rgba(15,0,30,1) 0%, #000 100%);
-            z-index: 100; transition: opacity 1.5s ease; pointer-events: none;
+            z-index: 100; transition: opacity 1.5s ease;
         }
         .title { color: #fff; font-weight: 100; letter-spacing: 12px; text-transform: uppercase; font-size: 1.4rem; text-align: center; margin-bottom: 18px; animation: glow 3s infinite alternate; }
         @keyframes glow { from { text-shadow: 0 0 10px #fff, 0 0 20px #ff00ff; } to { text-shadow: 0 0 20px #fff, 0 0 40px #00ffff; } }
@@ -24,46 +24,39 @@
         .tap-hint { position: fixed; bottom: 40px; width: 100%; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.6rem; letter-spacing: 3px; text-transform: uppercase; z-index: 50; }
 
         .love-text {
-            position: fixed;
-            top: 14px;
-            width: 100%;
-            text-align: center;
-            color: rgba(255,255,255,0.85);
-            font-size: 0.75rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            z-index: 60;
-            text-shadow: 0 0 10px rgba(255,0,153,0.6), 0 0 20px rgba(0,255,255,0.4);
+            position: fixed; top: 14px; width: 100%;
+            text-align: center; color: rgba(255,255,255,0.9);
+            font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase;
+            z-index: 60; text-shadow: 0 0 10px rgba(255,0,153,0.6), 0 0 20px rgba(0,255,255,0.4);
             pointer-events: none;
         }
 
         .audio-toggle {
-            position: fixed;
-            right: 14px;
-            bottom: 14px;
-            z-index: 70;
-            background: rgba(0,0,0,0.45);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #fff;
-            font-size: 0.65rem;
-            letter-spacing: 2px;
-            padding: 10px 12px;
+            position: fixed; right: 14px; bottom: 14px; z-index: 70;
+            background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; font-size: 0.65rem; letter-spacing: 2px; padding: 10px 12px;
+            border-radius: 999px; text-transform: uppercase; backdrop-filter: blur(4px);
+        }
+
+        .enter-btn {
+            margin-top: 22px;
+            padding: 12px 22px;
             border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.4);
+            color: #fff;
+            letter-spacing: 3px;
             text-transform: uppercase;
-            backdrop-filter: blur(4px);
+            font-size: 0.65rem;
+            cursor: pointer;
+            box-shadow: 0 0 18px rgba(0,255,255,0.2);
         }
 
         .falling-star {
-            position: fixed;
-            top: -40px;
-            color: rgba(255,255,255,0.9);
-            font-size: 0.8rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
+            position: fixed; top: -40px; color: rgba(255,255,255,0.9);
+            font-size: 0.8rem; letter-spacing: 3px; text-transform: uppercase;
             text-shadow: 0 0 12px rgba(255,0,153,0.7), 0 0 24px rgba(0,255,255,0.6);
-            pointer-events: none;
-            z-index: 65;
-            white-space: nowrap;
+            pointer-events: none; z-index: 65; white-space: nowrap;
         }
     </style>
 </head>
@@ -72,6 +65,7 @@
         <div class="title">Every Universe</div>
         <div class="bar-container"><div class="bar" id="progress-bar"></div></div>
         <div class="loading-text" id="status-text">Creating Galaxy...</div>
+        <button class="enter-btn" id="enter-btn" disabled>Enter Universe</button>
     </div>
 
     <div class="love-text">I love you Kajal</div>
@@ -79,10 +73,8 @@
     <button class="audio-toggle" id="audio-btn">Play Music</button>
     <div id="canvas-container"></div>
 
-    <!-- Audio -->
     <audio id="bgm" src="./1.mp3" preload="auto" loop></audio>
 
-    <!-- ES Module Shims -->
     <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
     <script type="importmap">
     {
@@ -102,8 +94,9 @@
 
         let scene, camera, renderer, composer, controls, starField, photoGroup, core;
         const clock = new THREE.Clock();
-        const photoCount = 60; // repeat images for infinite feel
+        const photoCount = 60;
         let loadedCount = 0;
+        let frameSkip = 0;
 
         const photoUrls = [
             './1.jpg','./2.jpg','./3.jpg','./4.jpg','./5.jpg',
@@ -117,7 +110,7 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // lag fix
             renderer.toneMapping = THREE.ReinhardToneMapping;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
@@ -128,10 +121,10 @@
             controls.autoRotateSpeed = 0.3;
 
             const renderScene = new RenderPass(scene, camera);
-            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-            bloomPass.threshold = 0.15;
-            bloomPass.strength = 1.2;
-            bloomPass.radius = 0.9;
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.35, 0.85);
+            bloomPass.threshold = 0.18;
+            bloomPass.strength = 0.9;
+            bloomPass.radius = 0.6;
 
             composer = new EffectComposer(renderer);
             composer.addPass(renderScene);
@@ -147,8 +140,8 @@
             const bar = document.getElementById('progress-bar');
             bar.style.width = (loadedCount / photoCount * 100) + '%';
             if (loadedCount >= photoCount) {
-                setTimeout(() => document.getElementById('overlay').style.opacity = '0', 800);
-                setTimeout(() => document.getElementById('overlay').style.display = 'none', 2300);
+                document.getElementById('enter-btn').disabled = false;
+                document.getElementById('status-text').innerText = "Ready";
             }
         }
 
@@ -167,11 +160,7 @@
             starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
             starGeo.setAttribute('color', new THREE.Float32BufferAttribute(starCols, 3));
             starField = new THREE.Points(starGeo, new THREE.PointsMaterial({
-                size: 1.2,
-                vertexColors: true,
-                blending: THREE.AdditiveBlending,
-                transparent: true,
-                opacity: 0.8
+                size: 1.2, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.8
             }));
             scene.add(starField);
 
@@ -202,7 +191,7 @@
                                 transparent: true,
                                 opacity: 1,
                                 side: THREE.DoubleSide,
-                                color: 0x777777 // darken photos
+                                color: 0xffffff
                             })
                         );
                         const phi = Math.acos(-1 + (2 * i) / photoCount);
@@ -235,7 +224,9 @@
             const s = 1 + Math.sin(time * 2) * 0.1;
             core.scale.set(s, s, s);
 
-            if (photoGroup.children.length > 0) {
+            // light lag fix: update billboards every other frame
+            frameSkip = (frameSkip + 1) % 2;
+            if (frameSkip === 0 && photoGroup.children.length > 0) {
                 photoGroup.children.forEach((p, i) => {
                     p.position.y += Math.sin(time + i) * 0.04;
                     p.quaternion.copy(camera.quaternion);
@@ -247,6 +238,7 @@
         // Audio
         const audio = document.getElementById('bgm');
         const btn = document.getElementById('audio-btn');
+        const enterBtn = document.getElementById('enter-btn');
         let audioStarted = false;
 
         async function toggleAudio() {
@@ -268,9 +260,12 @@
         }
 
         btn.addEventListener('click', toggleAudio);
-        window.addEventListener('pointerdown', () => {
-            if (!audioStarted) toggleAudio(); // music begins when she enters (first tap)
-        }, { once: true });
+
+        enterBtn.addEventListener('click', async () => {
+            document.getElementById('overlay').style.opacity = '0';
+            setTimeout(() => (document.getElementById('overlay').style.display = 'none'), 1200);
+            if (!audioStarted) await toggleAudio();
+        });
 
         // Falling star text every 2s
         function spawnFallingStar() {
@@ -300,6 +295,6 @@
     </script>
 </body>
 </html>
-If you want the photos darker or brighter, just tell me the level (I can change color: 0x777777).
+If still laggy, tell me your phone model and I’ll optimize further (without reducing photo count).
 
 Agent is ready
