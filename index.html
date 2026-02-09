@@ -52,6 +52,19 @@
             text-transform: uppercase;
             backdrop-filter: blur(4px);
         }
+
+        .falling-star {
+            position: fixed;
+            top: -40px;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 0 0 12px rgba(255,0,153,0.7), 0 0 24px rgba(0,255,255,0.6);
+            pointer-events: none;
+            z-index: 65;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -69,7 +82,7 @@
     <!-- Audio -->
     <audio id="bgm" src="./1.mp3" preload="auto" loop></audio>
 
-    <!-- ES Module Shims for absolute mobile compatibility -->
+    <!-- ES Module Shims -->
     <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
     <script type="importmap">
     {
@@ -89,7 +102,7 @@
 
         let scene, camera, renderer, composer, controls, starField, photoGroup, core;
         const clock = new THREE.Clock();
-        const photoCount = 10;
+        const photoCount = 60; // repeat images for infinite feel
         let loadedCount = 0;
 
         const photoUrls = [
@@ -133,7 +146,6 @@
             loadedCount++;
             const bar = document.getElementById('progress-bar');
             bar.style.width = (loadedCount / photoCount * 100) + '%';
-
             if (loadedCount >= photoCount) {
                 setTimeout(() => document.getElementById('overlay').style.opacity = '0', 800);
                 setTimeout(() => document.getElementById('overlay').style.display = 'none', 2300);
@@ -141,7 +153,6 @@
         }
 
         function setupGalaxy() {
-            // 1. Star Particles
             const starGeo = new THREE.BufferGeometry();
             const starPos = [];
             const starCols = [];
@@ -164,7 +175,6 @@
             }));
             scene.add(starField);
 
-            // 2. Central Pulse Core
             core = new THREE.Mesh(
                 new THREE.IcosahedronGeometry(40, 3),
                 new THREE.MeshBasicMaterial({ color: 0xff0066, wireframe: true, transparent: true, opacity: 0.4 })
@@ -176,21 +186,24 @@
             core.add(inner);
             scene.add(core);
 
-            // 3. Memory Planes
             photoGroup = new THREE.Group();
             scene.add(photoGroup);
 
             const loader = new THREE.TextureLoader();
-
             for (let i = 0; i < photoCount; i++) {
-                const url = photoUrls[i];
-
+                const url = photoUrls[i % photoUrls.length];
                 loader.load(
                     url,
                     (tex) => {
                         const plane = new THREE.Mesh(
-                            new THREE.PlaneGeometry(35, 35),
-                            new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.9, side: THREE.DoubleSide })
+                            new THREE.PlaneGeometry(40, 40),
+                            new THREE.MeshBasicMaterial({
+                                map: tex,
+                                transparent: true,
+                                opacity: 1,
+                                side: THREE.DoubleSide,
+                                color: 0x777777 // darken photos
+                            })
                         );
                         const phi = Math.acos(-1 + (2 * i) / photoCount);
                         const theta = Math.sqrt(photoCount * Math.PI) * phi;
@@ -200,10 +213,7 @@
                         checkProgress();
                     },
                     undefined,
-                    (err) => {
-                        console.warn('Image failed', err);
-                        checkProgress();
-                    }
+                    () => checkProgress()
                 );
             }
         }
@@ -231,11 +241,10 @@
                     p.quaternion.copy(camera.quaternion);
                 });
             }
-
             composer.render();
         }
 
-        // Audio toggle
+        // Audio
         const audio = document.getElementById('bgm');
         const btn = document.getElementById('audio-btn');
         let audioStarted = false;
@@ -254,15 +263,35 @@
                     btn.textContent = 'Play Music';
                 }
             } catch (e) {
-                console.warn('Audio play blocked:', e);
                 btn.textContent = 'Tap Again';
             }
         }
 
         btn.addEventListener('click', toggleAudio);
         window.addEventListener('pointerdown', () => {
-            if (!audioStarted) toggleAudio();
+            if (!audioStarted) toggleAudio(); // music begins when she enters (first tap)
         }, { once: true });
+
+        // Falling star text every 2s
+        function spawnFallingStar() {
+            const el = document.createElement('div');
+            el.className = 'falling-star';
+            el.textContent = 'I love you Kajal';
+            document.body.appendChild(el);
+
+            const startX = Math.random() * window.innerWidth;
+            const drift = (Math.random() * 240) - 120;
+            el.style.left = `${startX}px`;
+
+            const anim = el.animate([
+                { transform: 'translate3d(0,-40px,0) rotate(-10deg)', opacity: 0 },
+                { opacity: 1, offset: 0.15 },
+                { transform: `translate3d(${drift}px, ${window.innerHeight + 80}px,0) rotate(10deg)`, opacity: 0 }
+            ], { duration: 2400, easing: 'linear' });
+
+            anim.onfinish = () => el.remove();
+        }
+        setInterval(spawnFallingStar, 2000);
 
         try { init(); } catch (e) {
             console.error(e);
@@ -271,3 +300,6 @@
     </script>
 </body>
 </html>
+If you want the photos darker or brighter, just tell me the level (I can change color: 0x777777).
+
+Agent is ready
